@@ -1,0 +1,13 @@
+<launch>
+
+
+  <include file="$(find octomap_test)/launch/octomaptransform.launch"/>
+
+  <node pkg="octomap_test" type="pc_tf" name="pc_tf"/>
+
+
+
+
+
+</launch>
+

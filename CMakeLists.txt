@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
+
+add_compile_options(-std=c++14)
+
 project(octomap_test)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -8,7 +11,6 @@ project(octomap_test)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-
   roscpp
   rospy
   std_msgs
@@ -24,6 +26,10 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(PCL 1.7 REQUIRED)
 find_package(octomap REQUIRED)
+find_package(ompl REQUIRED)
+
+# find_package(dynamicEDT3D REQUIRED)
+# find_package(fcl REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -134,8 +140,14 @@ ${catkin_INCLUDE_DIRS}
 ${PCL_INCLUDE_DIRS}
 ${OCTOMAP_INCLUDE_DIRS}
 ${catkin_INCLUDE_DIRS}
+${OMPL_INCLUDE_DIRS}
 )
 link_libraries(${OCTOMAP_LIBRARIES})
+
+
+add_library(dynamicedt3d SHARED /home/pp/octomap/dynamicEDT3D/src/dynamicEDT3D.cpp)
+target_link_libraries(dynamicedt3d ${OCTOMAP_LIBRARIES})
+target_include_directories(dynamicedt3d PUBLIC /home/pp/octomap/dynamicEDT3D/include)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
@@ -155,6 +167,12 @@ target_link_libraries(read_pointcloud2   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${
 
 add_executable(pc_tf src/pc_tf.cpp)
 target_link_libraries(pc_tf   ${catkin_LIBRARIES} )
+
+add_executable(rrt_star_planner src/rrt_star_planner.cpp)
+target_link_libraries(rrt_star_planner   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} dynamicedt3d)
+
+# add_executable(octomap_planner_example src/octomap_planner_example.cpp)
+# target_link_libraries(octomap_planner_example   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} ${OMPL_LIBRARIES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

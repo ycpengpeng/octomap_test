@@ -8,13 +8,22 @@
     <param name="frame_id" type="string" value="/map" />
 
     <!-- max range / depth resolution of the kinect in meter -->
-    <param name="sensor_model/max_range" value="8.0" />
-    <param name="latch" value="true" />
+    <param name="sensor_model/max_range" value="5.0" />
 
     <!-- max/min height for occupancy map, should be in meters -->
     <param name="pointcloud_max_z" value="6" />
     <param name="pointcloud_min_z" value="0.2" />
     <param name="latch" value="false" />
+
+    <!-- <param name="sensor_model/hit" value="0.8" />    
+
+    <param name="sensor_model/miss" value="0.2" />     -->
+
+    <!-- <param name="filter_ground" value="true" />    
+
+    <param name="ground_filter/distance" value="0.04" />     -->
+
+    <!-- <param name="occupancy_min_z " value="0.1" />     -->
 
     <!-- topic from where pointcloud2 messages are subscribed -->
     <remap from="/cloud_in" to="/camera/depth/points" />
