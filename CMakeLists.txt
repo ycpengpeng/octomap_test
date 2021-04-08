@@ -171,6 +171,9 @@ target_link_libraries(pc_tf   ${catkin_LIBRARIES} )
 add_executable(rrt_star_planner src/rrt_star_planner.cpp)
 target_link_libraries(rrt_star_planner   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} dynamicedt3d)
 
+add_executable(map_test src/map_test.cpp)
+target_link_libraries(map_test   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} dynamicedt3d)
+
 # add_executable(octomap_planner_example src/octomap_planner_example.cpp)
 # target_link_libraries(octomap_planner_example   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} ${OMPL_LIBRARIES})
 
