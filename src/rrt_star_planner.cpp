@@ -76,6 +76,10 @@ visualization_msgs::Marker marker1;
 
 ros::Publisher marker_pub;
 
+octomap::point3d x_new_cor;
+int x_near_index;
+octomap::point3d x_near_cor;
+
 void positionCallback(const geometry_msgs::PoseStamped::ConstPtr &msg)
 {
 //    distmap.initializeEmpty(1,1,1,true);
@@ -139,7 +143,7 @@ void stateCallback(const mavros_msgs::State::ConstPtr &msg)
     current_state = *msg;
 }
 
-double findnearestnode_index(octomap::point3d point_rand)
+int findnearestnode_index(octomap::point3d point_rand)
 {
     double min_dis=1000;
     double tmp;
@@ -208,6 +212,29 @@ bool check_collision_free(octomap::point3d x_near_cor,octomap::point3d x_new_cor
     return free;
 }
 
+bool line_test(octomap::point3d point_rand,bool goal_point_check=false)
+{
+    octomap::OcTreeNode* result = octree_->search (point_rand);
+    if(result)
+    {
+        x_near_index=findnearestnode_index(point_rand);
+        x_near_cor=node_list[x_near_index]->getcoordinate();
+
+        octomap::point3d x_direction=(point_rand-x_near_cor).normalized();
+
+        if(goal_point_check)
+        {
+            x_new_cor=point_rand;
+        }
+        else{
+            x_new_cor=x_direction*STEPSIZE+x_near_cor;
+        }
+
+        return  check_collision_free(x_near_cor,x_new_cor);
+    }
+    return false;
+
+}
 
 bool rrt_star_gp()
 {
@@ -227,105 +254,102 @@ bool rrt_star_gp()
     double rand_tmp=rand()%100;
     // ROS_INFO("goal_point: %f %f %f",goal_point.x(),goal_point.y(),goal_point.z());
 
-    if(rand_tmp<90)
-    {
-        min.x()=0;
-        // min.y()=0;
-        min.z()=1.5;
-        max.z()=1.5;
-        point_rand.x()=min.x()+rand() / double(RAND_MAX/(max.x() -min.x() ));
-        point_rand.y()=min.y()+rand() / double(RAND_MAX/(max.y() -min.y() ));
-        point_rand.z()=min.z()+rand() / double(RAND_MAX/(max.z() -min.z() ));
-    }
-    else{
-        point_rand=goal_point;
-    }
+    // if(rand_tmp<90)
+    // {
+    //     min.x()=0;
+    //     // min.y()=0;
+    //     min.z()=1.5;
+    //     max.z()=1.5;
+    //     point_rand.x()=min.x()+rand() / double(RAND_MAX/(max.x() -min.x() ));
+    //     point_rand.y()=min.y()+rand() / double(RAND_MAX/(max.y() -min.y() ));
+    //     point_rand.z()=min.z()+rand() / double(RAND_MAX/(max.z() -min.z() ));
+    // }
+    // else{
+    //     point_rand=goal_point;
+    // }
    // ROS_INFO("point_rand: %f %f %f",point_rand.x(),point_rand.y(),point_rand.z());
 
-    octomap::OcTreeNode* result = octree_->search (point_rand);
-    if(result)
+
+    min.x()=0;
+    // min.y()=0;
+    min.z()=1.5;
+    max.z()=1.5;
+    point_rand.x()=min.x()+rand() / double(RAND_MAX/(max.x() -min.x() ));
+    point_rand.y()=min.y()+rand() / double(RAND_MAX/(max.y() -min.y() ));
+    point_rand.z()=min.z()+rand() / double(RAND_MAX/(max.z() -min.z() ));
+
+    bool point_rand_flag=false;
+    if(line_test(goal_point,true))
+    {
+        point_rand_flag=true;
+        point_rand=goal_point;
+    }
+    else if(line_test(point_rand))
+    {
+        point_rand_flag=true;
+    }
+    if(point_rand_flag)
     {
 
-        //ROS_INFO("point_rand: %f %f %f",point_rand.x(),point_rand.y(),point_rand.z());
-        //ROS_INFO("x_rand occupancy probility: %f ",result->getOccupancy());
-        //ROS_INFO("///////////////////////");
-        double x_near_index=findnearestnode_index(point_rand);
-        octomap::point3d x_near_cor=node_list[x_near_index]->getcoordinate();
+        // double x_near_index=findnearestnode_index(point_rand);
+        // octomap::point3d x_near_cor=node_list[x_near_index]->getcoordinate();
 
-        octomap::point3d x_direction=(point_rand-x_near_cor).normalized();
+        // octomap::point3d x_direction=(point_rand-x_near_cor).normalized();
 
-        octomap::point3d x_new_cor=x_direction*STEPSIZE+x_near_cor;
-
-        // geometry_msgs::Point point;
-        // point.x=x_new_cor.x();
-        // point.y=x_new_cor.y();
-        // point.z=x_new_cor.z();
-        // marker1.points.clear();
-        // marker1.points.push_back(point);
-        // std_msgs::ColorRGBA color;
-        // color.r=1.0;color.g=1.0;color.b=0.0;color.a=1.0;
-        // marker1.colors.clear();
-        // marker1.colors.push_back(color);
-        // marker.points.clear();
-        // // marker_pub.publish(marker);
-        // marker_pub.publish(marker1);
-
+        // octomap::point3d x_new_cor=x_direction*STEPSIZE+x_near_cor;
         
         ROS_INFO("x_new_cor: %f %f %f",x_new_cor.x(),x_new_cor.y(),x_new_cor.z());
 
+        Node* x_new=new Node;
+        x_new->setcoordinate(x_new_cor);
+        x_new->setparentnode(node_list[x_near_index]);
+        node_list.push_back(x_new);
 
-        if (check_collision_free(x_near_cor,x_new_cor))
+        geometry_msgs::Point point;
+        point.x=x_new_cor.x();
+        point.y=x_new_cor.y();
+        point.z=x_new_cor.z();
+
+        marker.points.push_back(point);
+
+        point.x=x_near_cor.x();
+        point.y=x_near_cor.y();
+        point.z=x_near_cor.z();
+        marker.points.push_back(point);
+
+        marker1.points.clear();
+
+        point.x=node_list[0]->getcoordinate().x();point.y=node_list[0]->getcoordinate().y();point.z=node_list[0]->getcoordinate().z();
+
+        marker1.colors.clear();
+        std_msgs::ColorRGBA color;
+        color.r=0.0;color.g=1.0;color.b=0.0;color.a=1.0;
+        marker1.colors.push_back(color);
+        color.r=1.0;color.g=0.0;color.b=0.0;color.a=1.0;
+        marker1.colors.push_back(color);
+        color.r=0.0;color.g=0.5;color.b=0.5;color.a=1.0;
+        marker1.colors.push_back(color);
+
+        marker1.points.push_back(point);  
+        point.x=goal_point.x();point.y=goal_point.y();point.z=goal_point.z();
+        marker1.points.push_back(point); 
+
+        point.x=x_new_cor.x();point.y=x_new_cor.y();point.z=x_new_cor.z();
+        marker1.points.push_back(point);  
+
+        marker_pub.publish(marker);
+        marker_pub.publish(marker1);
+
+
+        if(x_new_cor.distance(goal_point)<0.3)
         {
-            Node* x_new=new Node;
-            x_new->setcoordinate(x_new_cor);
-            x_new->setparentnode(node_list[x_near_index]);
-            node_list.push_back(x_new);
-
-            geometry_msgs::Point point;
-            point.x=x_new_cor.x();
-            point.y=x_new_cor.y();
-            point.z=x_new_cor.z();
-
-            marker.points.push_back(point);
-
-            point.x=x_near_cor.x();
-            point.y=x_near_cor.y();
-            point.z=x_near_cor.z();
-            marker.points.push_back(point);
-
-            marker1.points.clear();
-
-            point.x=node_list[0]->getcoordinate().x();point.y=node_list[0]->getcoordinate().y();point.z=node_list[0]->getcoordinate().z();
-
-            marker1.colors.clear();
-            std_msgs::ColorRGBA color;
-            color.r=0.0;color.g=1.0;color.b=0.0;color.a=1.0;
-            marker1.colors.push_back(color);
-            color.r=1.0;color.g=0.0;color.b=0.0;color.a=1.0;
-            marker1.colors.push_back(color);
-            color.r=0.0;color.g=0.5;color.b=0.5;color.a=1.0;
-            marker1.colors.push_back(color);
-
-            marker1.points.push_back(point);  
-            point.x=goal_point.x();point.y=goal_point.y();point.z=goal_point.z();
-            marker1.points.push_back(point); 
-
-            point.x=x_new_cor.x();point.y=x_new_cor.y();point.z=x_new_cor.z();
-            marker1.points.push_back(point);  
-
-            marker_pub.publish(marker);
-            marker_pub.publish(marker1);
-
-
-            if(x_new_cor.distance(goal_point)<0.3)
-            {
-                return true;
-            }
-            //ROS_INFO("x_new cor: %f %f %f",x_new_cor.x(),x_new_cor.y(),x_new_cor.z());
-            //ROS_INFO("node_list.size(): %ld",node_list.size());
-            //ROS_INFO("-----------------------");
-
+            return true;
         }
+        //ROS_INFO("x_new cor: %f %f %f",x_new_cor.x(),x_new_cor.y(),x_new_cor.z());
+        //ROS_INFO("node_list.size(): %ld",node_list.size());
+        //ROS_INFO("-----------------------");
+
+
     }
     return false;
 }
