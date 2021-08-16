@@ -19,6 +19,8 @@
 #include <iostream>
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/Point.h>
+#include <minimum_snap_path_plan.h>
+
 
 using namespace Eigen;
 using namespace std;
@@ -58,6 +60,7 @@ private:
     octomap::point3d cor;
 public:
     Node* parent_node;
+    float node_cost;
 
 };
 
@@ -70,7 +73,7 @@ octomap::OcTree* octree_;
 
 std::vector<Node*> node_list;
 octomap::point3d currrent_point(1,2,3);
-double STEPSIZE=0.5;
+double STEPSIZE=0.5; //////////////////////////////////////////////////////////////////////////
 visualization_msgs::Marker marker;
 visualization_msgs::Marker marker1;
 
@@ -171,6 +174,7 @@ bool check_collision_free(octomap::point3d x_near_cor,octomap::point3d x_new_cor
     octomap::point3d offset4(-square/2,-square/2,0);
     offset.push_back(offset4);
 
+
     int count=0;
     while(count<=3)
     {
@@ -211,7 +215,7 @@ bool check_collision_free(octomap::point3d x_near_cor,octomap::point3d x_new_cor
 
 bool rrt_star_gp()
 {
-    octomap::point3d goal_point (8.0, 0.0, 1.5);
+    octomap::point3d goal_point (7.0, 0.0, 1.5);  ///////////////////////////////////////////
     
     // ROS_INFO("goal_point: %f %f %f",goal_point.x(),goal_point.y(),goal_point.z());
 
@@ -407,23 +411,31 @@ int main(int argc, char** argv) {
             last_gp_time_=ros::Time::now();
         }
     }
-
-    ROS_INFO("motion planning complete,path points: ----------");
-    
+    ROS_WARN("motion planning complete,path points: ----------");
     Node* path_points=node_list[node_list.size()-1];
-    
+    std::vector<octomap::point3d> path_vector;
     while(path_points!=nullptr)
     {
+        path_vector.insert(path_vector.begin(), path_points->getcoordinate());
         path_points->printcoordinate();
         path_points=path_points->getparentnode();
     }
-
-    ROS_INFO("start tracking----------");
-    while(ros::ok())
+    MatrixXd point=MatrixXd::Zero(path_vector.size(),3);
+    for(int i=0;i<path_vector.size();i++)
     {
-        ros::spinOnce();
-	    loop_rate.sleep();
+        point(i,0)=path_vector[i].x();
+        point(i,1)=path_vector[i].y();
+        point(i,2)=path_vector[i].z();
     }
+    ROS_WARN("Start path smoothing------");
+    MatrixXd plan_path_matrix= minimum_snap_plan(point);
+
+    ROS_WARN("start tracking----------");
+    // while(ros::ok())
+    // {
+    //     ros::spinOnce();
+	//     loop_rate.sleep();
+    // }
     return 0;
 }
 

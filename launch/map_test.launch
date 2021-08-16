@@ -1,0 +1,7 @@
+<launch>
+
+  <node pkg="octomap_test" type="map_test" name="map_test"/>
+
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find octomap_test)/launch/test.rviz" required="true" /> 
+
+</launch>

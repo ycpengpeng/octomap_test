@@ -27,7 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(PCL 1.7 REQUIRED)
 find_package(octomap REQUIRED)
 find_package(ompl REQUIRED)
-
+find_package(PythonLibs 2.7)
 # find_package(dynamicEDT3D REQUIRED)
 # find_package(fcl REQUIRED)
 
@@ -142,6 +142,9 @@ ${OCTOMAP_INCLUDE_DIRS}
 ${catkin_INCLUDE_DIRS}
 ${OMPL_INCLUDE_DIRS}
 )
+include_directories("/home/pp/Downloads/matplotlib-cpp")
+include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories("/home/pp/catkin_ws/src/path_planning_test/include/path_planning_test")
 link_libraries(${OCTOMAP_LIBRARIES})
 
 
@@ -168,8 +171,8 @@ target_link_libraries(read_pointcloud2   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${
 add_executable(pc_tf src/pc_tf.cpp)
 target_link_libraries(pc_tf   ${catkin_LIBRARIES} )
 
-add_executable(rrt_star_planner src/rrt_star_planner.cpp)
-target_link_libraries(rrt_star_planner   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} dynamicedt3d)
+add_executable(rrt_star_planner src/rrt_star_planner.cpp /home/pp/catkin_ws/src/path_planning_test/src/minimum_snap_path_plan.cpp)
+target_link_libraries(rrt_star_planner   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} dynamicedt3d ${PYTHON_LIBRARIES})
 
 add_executable(map_test src/map_test.cpp)
 target_link_libraries(map_test   ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} dynamicedt3d)
